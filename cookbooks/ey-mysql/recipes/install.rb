@@ -53,14 +53,21 @@ package "libmysqlclient-dev"
 if node.engineyard.instance.arch_type == "arm64"
     package "mysql-client"
 else
-  package "percona-server-client"
+  # AI-GEN START - cursor
+  case node["mysql"]["short_version"]
+  when "5.7"
+    package "percona-server-client-5.7"
+  when "8.0"
+    package "percona-server-client"
+  end
+  # AI-GEN END
 end
 
 case node["mysql"]["short_version"]
 when "5.7"
-  packages = ["percona-server-common-5.7", "libperconaserverclient20", "percona-server-client-5.7", "percona-server-server-5.7"]
+  packages = ["percona-server-common-5.7", "libperconaserverclient20", "percona-server-server-5.7"] # AI-GEN - cursor
 when "8.0"
-  packages = ["percona-server-common", "libperconaserverclient21", "percona-server-client", "percona-server-server"]
+  packages = ["percona-server-common", "libperconaserverclient21", "percona-server-server"] # AI-GEN - cursor
 end
 
 if node["dna"]["instance_role"][/db|solo/]
