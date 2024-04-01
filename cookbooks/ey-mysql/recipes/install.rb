@@ -20,8 +20,12 @@ end.run_action(:add)
 
 known_versions = []
 install_version = node["mysql"]["latest_version"]
+# AI-GEN START - chatgpt
+short_version = node["mysql"]["short_version"]
+instance_role = node["dna"]["instance_role"]
+# AI-GEN END
 
-`apt-cache madison percona-server-server-#{node["mysql"]["short_version"]} |awk '{print $3'} && apt-cache madison percona-server-server |awk '{print $3}'`.split(/\n+/).each { |v| known_versions.append(v.split("-")[0]) }
+`apt-cache madison percona-server-server-#{short_version} |awk '{print $3'} && apt-cache madison percona-server-server |awk '{print $3}'`.split(/\n+/).each { |v| known_versions.append(v.split("-")[0]) } # AI-GEN - chatgpt
 package_version = known_versions.detect { |v| v =~ /^#{install_version}/ }
 
 lock_db_version = node.engineyard.environment.components.find_all { |e| e["key"] == "lock_db_version" }.first["value"] if node.engineyard.environment.lock_db_version?
@@ -30,7 +34,7 @@ lock_version_file = "/db/.lock_db_version"
 db_running = `mysql -N -e "select 1;" 2> /dev/null`.strip == "1"
 
 # create or delete /db/.lock_db_version
-if node["dna"]["instance_role"][/^(db|solo)/]
+if instance_role[/^(db|solo)/] # AI-GEN - chatgpt
   execute "dropping lock version file" do
     command "echo $(mysql --version | grep -E -o '(Distrib|Ver) [0-9]+\.[0-9]+\.[0-9]+' | awk '{print $NF}') > #{lock_version_file}"
     action :run
@@ -49,12 +53,12 @@ end
 end
 
 package "libmysqlclient-dev"
-# installs mysql client to all instnaces. 
+# installs mysql client to all instances.
 if node.engineyard.instance.arch_type == "arm64"
     package "mysql-client"
 else
   # AI-GEN START - cursor
-  case node["mysql"]["short_version"]
+  case short_version
   when "5.7"
     package "percona-server-client-5.7"
   when "8.0"
@@ -63,14 +67,16 @@ else
   # AI-GEN END
 end
 
-case node["mysql"]["short_version"]
+# AI-GEN START - chatgpt
+case short_version
 when "5.7"
-  packages = ["percona-server-common-5.7", "libperconaserverclient20", "percona-server-server-5.7"] # AI-GEN - cursor
+  packages = ["percona-server-common-5.7", "libperconaserverclient20", "percona-server-server-5.7"]
 when "8.0"
-  packages = ["percona-server-common", "libperconaserverclient21", "percona-server-server"] # AI-GEN - cursor
+  packages = ["percona-server-common", "libperconaserverclient21", "percona-server-server"]
 end
+# AI-GEN END
 
-if node["dna"]["instance_role"][/db|solo/]
+if instance_role[/db|solo/] # AI-GEN - chatgpt
   directory "/etc/systemd/system/mysql.service.d" do
     owner "root"
     group "root"
@@ -103,7 +109,7 @@ execute "set-deb-confs" do
 end
 
 # Loop the packages because chef doesn't understand, you install the dependency before even in the array...
-if node["dna"]["instance_role"][/^(db|solo)/]
+if instance_role[/^(db|solo)/] # AI-GEN - chatgpt
 packages.each do |package|
   apt_package package do
     version "#{package_version}"
@@ -119,7 +125,7 @@ ey_cloud_report "mysql installation" do
   message "installation of mysql packages and dependencies finished"
 end
 
-if node["dna"]["instance_role"][/^(db|solo)/] && node["mysql"]["short_version"] == "8.0"
+if instance_role[/^(db|solo)/] && short_version == "8.0" # AI-GEN - chatgpt
   bash "Set my.cnf alternatives for MySQL 8.0" do
     code <<-EOS
   update-alternatives --install /etc/mysql/my.cnf my.cnf /etc/mysql/percona-server.cnf 1000
