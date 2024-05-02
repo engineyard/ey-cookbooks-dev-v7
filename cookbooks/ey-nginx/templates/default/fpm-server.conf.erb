@@ -85,7 +85,7 @@ server {
     fastcgi_intercept_errors    off;
     fastcgi_param               SCRIPT_FILENAME $document_root$fastcgi_script_name;
     fastcgi_param               SERVER_NAME $hostname;
-    <% if  File.exists?("/etc/newrelic/newrelic.cfg") %>
+    <% if  File.exists("/etc/newrelic/newrelic.cfg") %>
     fastcgi_param               PHP_VALUE "newrelic.appname=<%= @env_name %> / <%= @vhost.app.name %>";
     <% end %>
   }
