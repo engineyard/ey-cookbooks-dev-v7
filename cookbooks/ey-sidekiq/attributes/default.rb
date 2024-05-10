@@ -36,6 +36,7 @@ default["sidekiq"].tap do |sidekiq|
 
   # Memory limit
   sidekiq["worker_memory"] = fetch_env_var(node, "EY_SIDEKIQ_WORKER_MEMORY_MB", 400).to_i # MB
+  sidekiq["worker_threshold_memory"] = fetch_env_var(node, "EY_SIDEKIQ_WORKER_THRESHOLD_MEMORY_MB", sidekiq["worker_memory"]*8/10).to_i # MB
 
   # Verbose
   sidekiq["verbose"] = fetch_env_var(node, "EY_SIDEKIQ_VERBOSE", false).to_s == "true"

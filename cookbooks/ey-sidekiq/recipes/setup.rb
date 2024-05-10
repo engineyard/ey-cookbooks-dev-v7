@@ -23,7 +23,8 @@ if node["sidekiq"]["is_sidekiq_instance"]
           count: count,
           user: node.engineyard.environment.ssh_username,
           rails_env: node["dna"]["environment"]["framework_env"],
-          memory_limit: node["sidekiq"]["worker_memory"]
+          memory_limit: node["sidekiq"]["worker_memory"],
+          memory_limit_threshold: node["sidekiq"]["worker_threshold_memory"]
         )
         notifies :run, "execute[restart-sidekiq-for-#{app_name}-#{count}]"
       end
