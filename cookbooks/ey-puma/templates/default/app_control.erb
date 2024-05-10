@@ -43,7 +43,7 @@ deploy() {
     if is_running ; then
       echo "Hot deploying Puma for ${application}"
       cd ${current_path}
-      pumactl -S  /var/run/engineyard/<%= @app_name %>/puma_<%= @app_name %>.state restart && echo " hot deploy in progress."
+      pumactl -S  /var/run/engineyard/<%= @app_name %>/puma_<%= @app_name %>.state phased-restart && echo " phased-restart deploy in progress."
     else
       start
     fi
