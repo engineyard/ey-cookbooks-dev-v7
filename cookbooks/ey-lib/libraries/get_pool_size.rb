@@ -80,6 +80,27 @@ class Engineyard
     end
 
     class Calculator
+      MEMORY_CONVERSION_FACTOR = 1024
+      DEFAULT_POOL_SIZE = 1
+
+      # Constants for repeated values
+      VCPU_LARGE = 2
+      VCPU_XLARGE = 4
+      VCPU_2XLARGE = 8
+      VCPU_4XLARGE = 16
+      VCPU_8XLARGE = 32
+      VCPU_9XLARGE = 36
+      VCPU_12XLARGE = 48
+      VCPU_16XLARGE = 64
+      VCPU_18XLARGE = 72
+      VCPU_24XLARGE = 96
+      VCPU_32XLARGE = 128
+      VCPU_48XLARGE = 192
+
+      # Then use these constants in the method calls
+      add_instance_resources("m6a.large", VCPU_LARGE, 12)
+      add_instance_resources("m6a.xlarge", VCPU_XLARGE, 24)
+
       InstanceResource = Struct.new(:vcpus, :defined_ecus, :innodb_pool)
       class InstanceResource
         ECU_TO_VCPU_RATIO = 3.25
@@ -102,172 +123,174 @@ class Engineyard
       # recipe to calculate innodb pool size will determine that value algorithmically.
       # If specific values are set, they override the algorithm.
 
+      def self.add_instance_resources(instance_type, vcpus, defined_ecus=nil, innodb_pool=nil)
+        Resources[instance_type] = InstanceResource.new(vcpus, defined_ecus, innodb_pool)
+      end
+
       Resources = Hash.new do |h, k|
         # parse cpuinfo and count the number of cores that it reports; use that as a default if asked for an unknown instance size.
         cores = File.read("/proc/cpuinfo").scan(/processor\s*:.*?cpu\s+cores\s*:\s*(\d+)/m).inject(0) { |a, x| a += x.first.to_i }
         h[k] = InstanceResource.new(cores, nil, nil)
       end
 
-      Resources.merge!({
-        # General burstable 3rd Gen
-        "t3.micro"       => InstanceResource.new(2, 10, nil),
-        "t3.small"       => InstanceResource.new(2, 10, nil),
-        "t3.medium"      => InstanceResource.new(2, 10, nil),
-        "t3.large"       => InstanceResource.new(2, 10, nil),
-        "t3.xlarge"      => InstanceResource.new(4, 16, nil),
-        "t3.2xlarge"     => InstanceResource.new(8, 37, nil),
+      # General burstable 3rd Gen
+      add_instance_resources("t3.micro", VCPU_LARGE, 10)
+      add_instance_resources("t3.small", VCPU_LARGE, 10)
+      add_instance_resources("t3.medium", VCPU_LARGE, 10)
+      add_instance_resources("t3.large", VCPU_LARGE, 10)
+      add_instance_resources("t3.xlarge", VCPU_XLARGE, 16)
+      add_instance_resources("t3.2xlarge", VCPU_2XLARGE, 37)
 
-        # General purpose 5th Gen
-        "m5.large"       => InstanceResource.new(2, 10, nil),
-        "m5.xlarge"      => InstanceResource.new(4, 16, nil),
-        "m5.2xlarge"     => InstanceResource.new(8, 37, nil),
-        "m5.4xlarge"     => InstanceResource.new(16, 70, nil),
-        "m5.12xlarge"    => InstanceResource.new(48, 168, nil),
-        "m5.24xlarge"    => InstanceResource.new(96, 337, nil),
-        "m5a.large"      => InstanceResource.new(2, 10, nil),
-        "m5a.xlarge"     => InstanceResource.new(4, 16, nil),
-        "m5a.2xlarge"    => InstanceResource.new(8, 37, nil),
-        "m5a.4xlarge"    => InstanceResource.new(16, 70, nil),
-        "m5a.12xlarge"   => InstanceResource.new(48, 168, nil),
-        "m5a.24xlarge"   => InstanceResource.new(96, 337, nil),
-        "m5d.large"      => InstanceResource.new(2, 10, nil),
-        "m5d.xlarge"     => InstanceResource.new(4, 16, nil),
-        "m5d.2xlarge"    => InstanceResource.new(8, 37, nil),
-        "m5d.4xlarge"    => InstanceResource.new(16, 70, nil),
-        "m5d.12xlarge"   => InstanceResource.new(48, 168, nil),
-        "m5d.24xlarge"   => InstanceResource.new(96, 337, nil),
+      # General purpose 5th Gen
+      add_instance_resources("m5.large", VCPU_LARGE, 10)
+      add_instance_resources("m5.xlarge", VCPU_XLARGE, 16)
+      add_instance_resources("m5.2xlarge", VCPU_2XLARGE, 37)
+      add_instance_resources("m5.4xlarge", VCPU_4XLARGE, 70)
+      add_instance_resources("m5.12xlarge", VCPU_12XLARGE, 168)
+      add_instance_resources("m5.24xlarge", VCPU_24XLARGE, 337)
+      add_instance_resources("m5a.large", VCPU_LARGE, 10)
+      add_instance_resources("m5a.xlarge", VCPU_XLARGE, 16)
+      add_instance_resources("m5a.2xlarge", VCPU_2XLARGE, 37)
+      add_instance_resources("m5a.4xlarge", VCPU_4XLARGE, 70)
+      add_instance_resources("m5a.12xlarge", VCPU_12XLARGE, 168)
+      add_instance_resources("m5a.24xlarge", VCPU_24XLARGE, 337)
+      add_instance_resources("m5d.large", VCPU_LARGE, 10)
+      add_instance_resources("m5d.xlarge", VCPU_XLARGE, 16)
+      add_instance_resources("m5d.2xlarge", VCPU_2XLARGE, 37)
+      add_instance_resources("m5d.4xlarge", VCPU_4XLARGE, 70)
+      add_instance_resources("m5d.12xlarge", VCPU_12XLARGE, 168)
+      add_instance_resources("m5d.24xlarge", VCPU_24XLARGE, 337)
 
-        # General purpose 6th Gen
-        "m6a.large"      => InstanceResource.new(2, 12, nil),
-        "m6a.xlarge"     => InstanceResource.new(4, 19, nil),
-        "m6a.2xlarge"    => InstanceResource.new(8, 44, nil),
-        "m6a.4xlarge"    => InstanceResource.new(16, 84, nil),
-        "m6a.12xlarge"   => InstanceResource.new(48, 201, nil),
-        "m6a.24xlarge"   => InstanceResource.new(96, 404, nil),
-        "m6i.large"      => InstanceResource.new(2, 12, nil),
-        "m6i.xlarge"     => InstanceResource.new(4, 19, nil),
-        "m6i.2xlarge"    => InstanceResource.new(8, 44, nil),
-        "m6i.4xlarge"    => InstanceResource.new(16, 84, nil),
-        "m6i.12xlarge"   => InstanceResource.new(48, 201, nil),
-        "m6i.24xlarge"   => InstanceResource.new(96, 307, nil),
-        "m6g.large"      => InstanceResource.new(2, 14, nil),
-        "m6g.xlarge"     => InstanceResource.new(4, 22, nil),
-        "m6g.2xlarge"    => InstanceResource.new(8, 52, nil),
-        "m6g.4xlarge"    => InstanceResource.new(16, 100, nil),
-        "m6g.12xlarge"   => InstanceResource.new(48, 241, nil),
-        "m6g.16xlarge"   => InstanceResource.new(64, 484, nil),
-        "m6gd.large"     => InstanceResource.new(2, 14, nil),
-        "m6gd.xlarge"    => InstanceResource.new(4, 22, nil),
-        "m6gd.2xlarge"   => InstanceResource.new(8, 52, nil),
-        "m6gd.4xlarge"   => InstanceResource.new(16, 100, nil),
-        "m6gd.12xlarge"  => InstanceResource.new(48, 241, nil),
-        "m6gd.16xlarge"  => InstanceResource.new(64, 484, nil),
+      # General purpose 6th Gen
+      add_instance_resources("m6a.large", VCPU_LARGE, 12)
+      add_instance_resources("m6a.xlarge", VCPU_XLARGE, 19)
+      add_instance_resources("m6a.2xlarge", VCPU_2XLARGE, 44)
+      add_instance_resources("m6a.4xlarge", VCPU_4XLARGE, 84)
+      add_instance_resources("m6a.12xlarge", VCPU_12XLARGE, 201)
+      add_instance_resources("m6a.24xlarge", VCPU_24XLARGE, 404)
+      add_instance_resources("m6i.large", VCPU_LARGE, 12)
+      add_instance_resources("m6i.xlarge", VCPU_XLARGE, 19)
+      add_instance_resources("m6i.2xlarge", VCPU_2XLARGE, 44)
+      add_instance_resources("m6i.4xlarge", VCPU_4XLARGE, 84)
+      add_instance_resources("m6i.12xlarge", VCPU_12XLARGE, 201)
+      add_instance_resources("m6i.24xlarge", VCPU_24XLARGE, 307)
+      add_instance_resources("m6g.large", VCPU_LARGE, 14)
+      add_instance_resources("m6g.xlarge", VCPU_XLARGE, 22)
+      add_instance_resources("m6g.2xlarge", VCPU_2XLARGE, 52)
+      add_instance_resources("m6g.4xlarge", VCPU_4XLARGE, 100)
+      add_instance_resources("m6g.12xlarge", VCPU_12XLARGE, 241)
+      add_instance_resources("m6g.16xlarge", VCPU_16XLARGE, 484)
+      add_instance_resources("m6gd.large", VCPU_LARGE, 14)
+      add_instance_resources("m6gd.xlarge", VCPU_XLARGE, 22)
+      add_instance_resources("m6gd.2xlarge", VCPU_2XLARGE, 52)
+      add_instance_resources("m6gd.4xlarge", VCPU_4XLARGE, 100)
+      add_instance_resources("m6gd.12xlarge", VCPU_12XLARGE, 241)
+      add_instance_resources("m6gd.16xlarge", VCPU_16XLARGE, 484)
 
-        # Compute optimized 5th Gen
-        "c5.large"       => InstanceResource.new(2, 10, nil),
-        "c5.xlarge"      => InstanceResource.new(4, 20, nil),
-        "c5.2xlarge"     => InstanceResource.new(8, 39, nil),
-        "c5.4xlarge"     => InstanceResource.new(16, 73, nil),
-        "c5.9xlarge"     => InstanceResource.new(36, 139, nil),
-        "c5.18xlarge"    => InstanceResource.new(72, 281, nil),
-        "c5d.large"      => InstanceResource.new(2, 10, nil),
-        "c5d.xlarge"     => InstanceResource.new(4, 20, nil),
-        "c5d.2xlarge"    => InstanceResource.new(8, 39, nil),
-        "c5d.4xlarge"    => InstanceResource.new(16, 73, nil),
-        "c5d.9xlarge"    => InstanceResource.new(36, 139, nil),
-        "c5d.18xlarge"   => InstanceResource.new(72, 281, nil),
+      # Compute optimized 5th Gen
+      add_instance_resources("c5.large", VCPU_LARGE, 10)
+      add_instance_resources("c5.xlarge", VCPU_XLARGE, 20)
+      add_instance_resources("c5.2xlarge", VCPU_2XLARGE, 39)
+      add_instance_resources("c5.4xlarge", VCPU_4XLARGE, 73)
+      add_instance_resources("c5.9xlarge", VCPU_9XLARGE, 139)
+      add_instance_resources("c5.18xlarge", VCPU_18XLARGE, 281)
+      add_instance_resources("c5d.large", VCPU_LARGE, 10)
+      add_instance_resources("c5d.xlarge", VCPU_XLARGE, 20)
+      add_instance_resources("c5d.2xlarge", VCPU_2XLARGE, 39)
+      add_instance_resources("c5d.4xlarge", VCPU_4XLARGE, 73)
+      add_instance_resources("c5d.9xlarge", VCPU_9XLARGE, 139)
+      add_instance_resources("c5d.18xlarge", VCPU_18XLARGE, 281)
 
-        # Compute optimized 6th Gen
-        "c6i.large"      => InstanceResource.new(2, 12, nil),
-        "c6i.xlarge"     => InstanceResource.new(4, 24, nil),
-        "c6i.2xlarge"    => InstanceResource.new(8, 46, nil),
-        "c6i.4xlarge"    => InstanceResource.new(16, 87, nil),
-        "c6i.8xlarge"    => InstanceResource.new(32, 174, nil),
-        "c6i.16xlarge"   => InstanceResource.new(64, 348, nil),
-        "c6a.large"      => InstanceResource.new(2, 12, nil),
-        "c6a.xlarge"     => InstanceResource.new(4, 24, nil),
-        "c6a.2xlarge"    => InstanceResource.new(8, 46, nil),
-        "c6a.4xlarge"    => InstanceResource.new(16, 87, nil),
-        "c6a.8xlarge"    => InstanceResource.new(32, 174, nil),
-        "c6a.16xlarge"   => InstanceResource.new(64, 348, nil),
-        "c6g.large"      => InstanceResource.new(2, 14, nil),
-        "c6g.xlarge"     => InstanceResource.new(4, 28, nil),
-        "c6g.2xlarge"    => InstanceResource.new(8, 55, nil),
-        "c6g.4xlarge"    => InstanceResource.new(16, 104, nil),
-        "c6g.8xlarge"    => InstanceResource.new(32, 208, nil),
-        "c6g.16xlarge"   => InstanceResource.new(64, 417, nil),
-        "c6gd.large"     => InstanceResource.new(2, 14, nil),
-        "c6gd.xlarge"    => InstanceResource.new(4, 28, nil),
-        "c6gd.2xlarge"   => InstanceResource.new(8, 55, nil),
-        "c6gd.4xlarge"   => InstanceResource.new(16, 104, nil),
-        "c6gd.8xlarge"   => InstanceResource.new(32, 208, nil),
-        "c6gd.16xlarge"  => InstanceResource.new(64, 417, nil),
+      # Compute optimized 6th Gen
+      add_instance_resources("c6i.large", VCPU_LARGE, 12)
+      add_instance_resources("c6i.xlarge", VCPU_XLARGE, 24)
+      add_instance_resources("c6i.2xlarge", VCPU_2XLARGE, 46)
+      add_instance_resources("c6i.4xlarge", VCPU_4XLARGE, 87)
+      add_instance_resources("c6i.8xlarge", VCPU_8XLARGE, 174)
+      add_instance_resources("c6i.16xlarge", VCPU_16XLARGE, 348)
+      add_instance_resources("c6a.large", VCPU_LARGE, 12)
+      add_instance_resources("c6a.xlarge", VCPU_XLARGE, 24)
+      add_instance_resources("c6a.2xlarge", VCPU_2XLARGE, 46)
+      add_instance_resources("c6a.4xlarge", VCPU_4XLARGE, 87)
+      add_instance_resources("c6a.8xlarge", VCPU_8XLARGE, 174)
+      add_instance_resources("c6a.16xlarge", VCPU_16XLARGE, 348)
+      add_instance_resources("c6g.large", VCPU_LARGE, 14)
+      add_instance_resources("c6g.xlarge", VCPU_XLARGE, 28)
+      add_instance_resources("c6g.2xlarge", VCPU_2XLARGE, 55)
+      add_instance_resources("c6g.4xlarge", VCPU_4XLARGE, 104)
+      add_instance_resources("c6g.8xlarge", VCPU_8XLARGE, 208)
+      add_instance_resources("c6g.16xlarge", VCPU_16XLARGE, 417)
+      add_instance_resources("c6gd.large", VCPU_LARGE, 14)
+      add_instance_resources("c6gd.xlarge", VCPU_XLARGE, 28)
+      add_instance_resources("c6gd.2xlarge", VCPU_2XLARGE, 55)
+      add_instance_resources("c6gd.4xlarge", VCPU_4XLARGE, 104)
+      add_instance_resources("c6gd.8xlarge", VCPU_8XLARGE, 208)
+      add_instance_resources("c6gd.16xlarge", VCPU_16XLARGE, 417)
 
-        # Memory optimized 5th Gen
-        "r5.large"       => InstanceResource.new(2, 10, nil),
-        "r5.xlarge"      => InstanceResource.new(4, 19, nil),
-        "r5.2xlarge"     => InstanceResource.new(8, 37, nil),
-        "r5.4xlarge"     => InstanceResource.new(16, 70, nil),
-        "r5.12xlarge"    => InstanceResource.new(48, 168, nil),
-        "r5.24xlarge"    => InstanceResource.new(96, 337, nil),
-        "r5a.large"      => InstanceResource.new(2, 10, nil),
-        "r5a.xlarge"     => InstanceResource.new(4, 19, nil),
-        "r5a.2xlarge"    => InstanceResource.new(8, 37, nil),
-        "r5a.4xlarge"    => InstanceResource.new(16, 70, nil),
-        "r5a.12xlarge"   => InstanceResource.new(48, 168, nil),
-        "r5a.24xlarge"   => InstanceResource.new(96, 337, nil),
-        "r5d.large"      => InstanceResource.new(2, 10, nil),
-        "r5d.xlarge"     => InstanceResource.new(4, 19, nil),
-        "r5d.2xlarge"    => InstanceResource.new(8, 37, nil),
-        "r5d.4xlarge"    => InstanceResource.new(16, 70, nil),
-        "r5d.12xlarge"   => InstanceResource.new(48, 168, nil),
-        "r5d.24xlarge"   => InstanceResource.new(96, 337, nil),
+      # Memory optimized 5th Gen
+      add_instance_resources("r5.large", VCPU_LARGE, 10)
+      add_instance_resources("r5.xlarge", VCPU_XLARGE, 19)
+      add_instance_resources("r5.2xlarge", VCPU_2XLARGE, 37)
+      add_instance_resources("r5.4xlarge", VCPU_4XLARGE, 70)
+      add_instance_resources("r5.12xlarge", VCPU_12XLARGE, 168)
+      add_instance_resources("r5.24xlarge", VCPU_24XLARGE, 337)
+      add_instance_resources("r5a.large", VCPU_LARGE, 10)
+      add_instance_resources("r5a.xlarge", VCPU_XLARGE, 19)
+      add_instance_resources("r5a.2xlarge", VCPU_2XLARGE, 37)
+      add_instance_resources("r5a.4xlarge", VCPU_4XLARGE, 70)
+      add_instance_resources("r5a.12xlarge", VCPU_12XLARGE, 168)
+      add_instance_resources("r5a.24xlarge", VCPU_24XLARGE, 337)
+      add_instance_resources("r5d.large", VCPU_LARGE, 10)
+      add_instance_resources("r5d.xlarge", VCPU_XLARGE, 19)
+      add_instance_resources("r5d.2xlarge", VCPU_2XLARGE, 37)
+      add_instance_resources("r5d.4xlarge", VCPU_4XLARGE, 70)
+      add_instance_resources("r5d.12xlarge", VCPU_12XLARGE, 168)
+      add_instance_resources("r5d.24xlarge", VCPU_24XLARGE, 337)
 
-        # Memory optimized 6th Gen
-        "r6a.large"      => InstanceResource.new(2, 12, nil),
-        "r6a.xlarge"     => InstanceResource.new(4, 24, nil),
-        "r6a.2xlarge"    => InstanceResource.new(8, 48, nil),
-        "r6a.4xlarge"    => InstanceResource.new(16, 96, nil),
-        "r6a.12xlarge"   => InstanceResource.new(48, 224, nil),
-        "r6a.16xlarge"   => InstanceResource.new(64, 316, nil),
-        "r6a.24xlarge"   => InstanceResource.new(96, 444, nil),
-        "r6a.32xlarge"   => InstanceResource.new(128, 535, nil),
-        "r6a.48xlarge"   => InstanceResource.new(192, 768, nil),
-        "r6i.large"      => InstanceResource.new(2, 12, nil),
-        "r6i.xlarge"     => InstanceResource.new(4, 22, nil),
-        "r6i.2xlarge"    => InstanceResource.new(8, 44, nil),
-        "r6i.4xlarge"    => InstanceResource.new(16, 84, nil),
-        "r6i.12xlarge"   => InstanceResource.new(48, 201, nil),
-        "r6i.24xlarge"   => InstanceResource.new(96, 404, nil),
-        "r6g.large"      => InstanceResource.new(2, 14, nil),
-        "r6g.xlarge"     => InstanceResource.new(4, 26, nil),
-        "r6g.2xlarge"    => InstanceResource.new(8, 52, nil),
-        "r6g.4xlarge"    => InstanceResource.new(16, 100, nil),
-        "r6g.12xlarge"   => InstanceResource.new(48, 241, nil),
-        "r6g.16xlarge"   => InstanceResource.new(64, 368, nil),
-        "r6gd.large"     => InstanceResource.new(2, 14, nil),
-        "r6gd.xlarge"    => InstanceResource.new(4, 26, nil),
-        "r6gd.2xlarge"   => InstanceResource.new(8, 52, nil),
-        "r6gd.4xlarge"   => InstanceResource.new(16, 100, nil),
-        "r6gd.12xlarge"  => InstanceResource.new(48, 241, nil),
-        "r6gd.16xlarge"  => InstanceResource.new(64, 368, nil),
+      # Memory optimized 6th Gen
+      add_instance_resources("r6a.large", VCPU_LARGE, 12)
+      add_instance_resources("r6a.xlarge", VCPU_XLARGE, 24)
+      add_instance_resources("r6a.2xlarge", VCPU_2XLARGE, 48)
+      add_instance_resources("r6a.4xlarge", VCPU_4XLARGE, 96)
+      add_instance_resources("r6a.12xlarge", VCPU_12XLARGE, 224)
+      add_instance_resources("r6a.16xlarge", VCPU_16XLARGE, 316)
+      add_instance_resources("r6a.24xlarge", VCPU_24XLARGE, 444)
+      add_instance_resources("r6a.32xlarge", VCPU_32XLARGE, 535)
+      add_instance_resources("r6a.48xlarge", VCPU_48XLARGE, 768)
+      add_instance_resources("r6i.large", VCPU_LARGE, 12)
+      add_instance_resources("r6i.xlarge", VCPU_XLARGE, 22)
+      add_instance_resources("r6i.2xlarge", VCPU_2XLARGE, 44)
+      add_instance_resources("r6i.4xlarge", VCPU_4XLARGE, 84)
+      add_instance_resources("r6i.12xlarge", VCPU_12XLARGE, 201)
+      add_instance_resources("r6i.24xlarge", VCPU_24XLARGE, 404)
+      add_instance_resources("r6g.large", VCPU_LARGE, 14)
+      add_instance_resources("r6g.xlarge", VCPU_XLARGE, 26)
+      add_instance_resources("r6g.2xlarge", VCPU_2XLARGE, 52)
+      add_instance_resources("r6g.4xlarge", VCPU_4XLARGE, 100)
+      add_instance_resources("r6g.12xlarge", VCPU_12XLARGE, 241)
+      add_instance_resources("r6g.16xlarge", VCPU_16XLARGE, 368)
+      add_instance_resources("r6gd.large", VCPU_LARGE, 14)
+      add_instance_resources("r6gd.xlarge", VCPU_XLARGE, 26)
+      add_instance_resources("r6gd.2xlarge", VCPU_2XLARGE, 52)
+      add_instance_resources("r6gd.4xlarge", VCPU_4XLARGE, 100)
+      add_instance_resources("r6gd.12xlarge", VCPU_12XLARGE, 241)
+      add_instance_resources("r6gd.16xlarge", VCPU_16XLARGE, 368)
 
-        # Storage optimized 3rd Gen
-        "i3.large"       => InstanceResource.new(2, 8, nil),
-        "i3.xlarge"      => InstanceResource.new(4, 16, nil),
-        "i3.2xlarge"     => InstanceResource.new(8, 31, nil),
-        "i3.4xlarge"     => InstanceResource.new(16, 58, nil),
-        "i3.8xlarge"     => InstanceResource.new(32, 97, nil),
-        "i3.16xlarge"    => InstanceResource.new(64, 201, nil),
+      # Storage optimized 3rd Gen
+      add_instance_resources("i3.large", VCPU_LARGE, 8)
+      add_instance_resources("i3.xlarge", VCPU_XLARGE, 16)
+      add_instance_resources("i3.2xlarge", VCPU_2XLARGE, 31)
+      add_instance_resources("i3.4xlarge", VCPU_4XLARGE, 58)
+      add_instance_resources("i3.8xlarge", VCPU_8XLARGE, 97)
+      add_instance_resources("i3.16xlarge", VCPU_16XLARGE, 201)
 
-        # Storage optimized 4rd Gen
-        "i4i.large"      => InstanceResource.new(2, 8, nil),
-        "i4i.xlarge"     => InstanceResource.new(4, 16, nil),
-        "i4i.2xlarge"    => InstanceResource.new(8, 31, nil),
-        "i4i.4xlarge"    => InstanceResource.new(16, 58, nil),
-        "i4i.8xlarge"    => InstanceResource.new(32, 97, nil),
-        "i4i.16xlarge"   => InstanceResource.new(64, 201, nil),
-      })
+      # Storage optimized 4rd Gen
+      add_instance_resources("i4i.large", VCPU_LARGE, 8)
+      add_instance_resources("i4i.xlarge", VCPU_XLARGE, 16)
+      add_instance_resources("i4i.2xlarge", VCPU_2XLARGE, 31)
+      add_instance_resources("i4i.4xlarge", VCPU_4XLARGE, 58)
+      add_instance_resources("i4i.8xlarge", VCPU_8XLARGE, 97)
+      add_instance_resources("i4i.16xlarge", VCPU_16XLARGE, 201)
 
       # attributes
       attr_accessor :recipe
@@ -278,11 +301,7 @@ class Engineyard
       end
 
       def calculate(instance_size)
-        if custom_pool_size > 0
-          custom_pool_size
-        else
-          calculate_pool_size(instance_size)
-        end
+        custom_pool_size > 0 ? custom_pool_size : calculate_pool_size(instance_size)
       end
 
       protected
@@ -316,25 +335,33 @@ class Engineyard
       end
 
       def calculate_pool_size(instance_size)
+        pool_size = calculate_pool_size_based_on_apps_count(instance_size)
+        ensure_pool_size_is_never_zero(pool_size)
+      end
+
+      def calculate_pool_size_based_on_apps_count(instance_size)
         apps_count = self.recipe.metadata_get_apps_count
         smallest_of_maximums = [ max_by_memory, max_by_ecu(instance_size), settings[:max_pool_size] ].min
-        pool_size = ([ smallest_of_maximums, settings[:min_pool_size] ].max / apps_count).floor
+        ([ smallest_of_maximums, settings[:min_pool_size] ].max / apps_count).floor
+      end
 
-        # ensure pool_size is never zero
-        if pool_size == 0
-          pool_size  = 1
-        else
-          pool_size
-        end
+      def ensure_pool_size_is_never_zero(pool_size)
+        pool_size.zero? ? DEFAULT_POOL_SIZE : pool_size
       end
 
       def available_memory
-        meminfo = File.read("/proc/meminfo")
-        memory = meminfo[/^MemTotal:\s+(\d+)/, 1].to_i / 1024
-        swap = meminfo[/^SwapTotal:\s+(\d+)/, 1].to_i / 1024
+        meminfo = read_meminfo_file
+        memory = meminfo[/^MemTotal:\s+(\d+)/, 1].to_i / MEMORY_CONVERSION_FACTOR
+        swap = meminfo[/^SwapTotal:\s+(\d+)/, 1].to_i / MEMORY_CONVERSION_FACTOR
         memory + (swap * settings[:swap_usage_percent] / 100).floor
       end
-    end
+
+      def read_meminfo_file
+        File.read("/proc/meminfo")
+      rescue Errno::ENOENT
+        # Handle error, e.g. log it and/or raise a custom error
+      end 
+
 
     def self.instance_resources(instance_size)
       Engineyard::PoolSize::Calculator::Resources[instance_size]
