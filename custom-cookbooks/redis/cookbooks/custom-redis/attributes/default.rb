@@ -4,7 +4,6 @@ default["redis"].tap do |redis|
   # that's different from the one offered by Ubuntu 20.04.
   # As per now the default version is 5.0.7-2ubuntu0.1
   redis["install_from_source"] = false
-
   # If you're installing from source, see http://download.redis.io/releases/ for the available versions
   # Beta versions will also work, e.g. 5.0-rc6. Make sure you set the download_url correctly.
   # redis['install_from_source'] = true
@@ -16,7 +15,6 @@ default["redis"].tap do |redis|
   # redis['install_from_source'] = true
   # redis['version'] = '5.0-rc6'
   # redis['download_url'] = "https://github.com/antirez/redis/archive/#{redis['version']}.tar.gz"
-
   # If EY_REDIS_VERSION is set, install (from source) that particular version
   ey_redis_version = fetch_env_var(node, "EY_REDIS_VERSION")
   if ey_redis_version
@@ -38,24 +36,18 @@ default["redis"].tap do |redis|
   # redis['slave_name'] = 'redis_slave'
   # redis_instances << redis['slave_name']
 
-  # Run Redis depending on environment variables
-  # By default, will install redis on a named util instance
+  # Run Redis on a named util instance
+  # This is the default
   redis["utility_name"] = fetch_env_var(node, "EY_REDIS_INSTANCE_NAME", "redis")
   redis_instances << redis["utility_name"]
-  redis["instance_role"] = fetch_env_var(node, "EY_REDIS_INSTANCE_ROLE", "util")
+  redis["is_redis_instance"] = (
+    node["dna"]["instance_role"] == fetch_env_var(node, "EY_REDIS_INSTANCE_ROLE", "util") &&
+    redis_instances.include?(node["dna"]["name"])
+  )
 
-  if redis["instance_role"] == "solo"
-    redis["is_redis_instance"] = (node["dna"]["instance_role"] == "solo")
-  end
-
-  if redis["instance_role"] == "app_master"
-    redis["is_redis_instance"] = (node["dna"]["instance_role"] == "app_master")
-  end
-
-  if redis["instance_role"] == "util"
-    redis["is_redis_instance"] = (node["dna"]["instance_role"] == "util") && redis_instances.include?(node["dna"]["name"])
-  end
-
+  # Run redis on a solo instance
+  # Not recommended for production environments
+  # redis['is_redis_instance'] = (node['dna']['instance_role'] == 'solo')
   # Log level options:
   # - debug
   # - verbose
@@ -86,13 +78,11 @@ default["redis"].tap do |redis|
   # a different one on a per-connection basis using SELECT <dbid> where
   # dbid is a number between 0 and 'databases'-1
   redis["databases"] = 16
-
   # Compress string objects using LZF when dump .rdb databases?
   # For default that's set to 'yes' as it's almost always a win.
   # If you want to save some CPU in the saving child set it to 'no' but
   # the dataset will likely be bigger if you have compressible values or keys.
   redis["rdbcompression"] = "yes"
-
   # Redis calls an internal function to perform many background tasks, like
   # closing connections of clients in timeout, purging expired keys that are
   # never requested, and so forth.
