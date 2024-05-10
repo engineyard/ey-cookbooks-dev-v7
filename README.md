@@ -46,3 +46,19 @@ For more information about our V7 (20.04 LTS) Stack, please see https://www.engi
 ## Contributing/Development
 
 Please read our [Contributions Guidelines](https://github.com/engineyard/ey-cookbooks-stable-v7/blob/next-release/CONTRIBUTING.md).
+
+## Test suite
+
+The provide unit test suite is a work in progress. It relies on ChefSpec and Docker.
+
+1. Build the Docker image: Run the following command in the directory containing the Dockerfile. This will create a Docker image named my-chefspec-tests.
+
+```
+docker build -t v7-chefspec-tests .
+```
+
+2. Run the tests: After the image is built, you can run the tests with the following command:
+```
+docker run v7-chefspec-tests
+```
+This command will start a Docker container from the v7-chefspec-tests image and execute the ChefSpec tests.
