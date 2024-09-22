@@ -4,6 +4,7 @@ execute "le register --account-key" do
   not_if { ::File.exist?("/etc/le/config") }
 end
 
+follow_paths = []
 # Add custom follow paths from general environment variable
 node["logentries"]["follow_paths"].each do |path|
   path = JSON.parse(path)
