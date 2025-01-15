@@ -1,8 +1,8 @@
 lock_major_version = `[ -f "/db/.lock_db_version" ] && grep -E -o '^[0-9]+\.[0-9]+' /db/.lock_db_version `
 db_stack = lock_major_version == "" ? attribute["dna"]["engineyard"]["environment"]["db_stack_name"] : "mysql#{lock_major_version.gsub(/\./, '_').strip}"
 
-default["latest_version_57"] = `apt-cache madison percona-server-common-5.7 |awk '{print $3'} | tail -1`.split("-")[0]
-default["latest_version_80"] = `apt-cache madison percona-server-common |awk '{print $3'} | tail -1`.split("-")[0]
+default["latest_version_57"] = `apt-cache madison percona-server-common-5.7 | sort -V | awk '{print $3'} | tail -1`.split("-")[0]
+default["latest_version_80"] = `apt-cache madison percona-server-common | sort -V | awk '{print $3'} | tail -1`.split("-")[0]
 
 major_version = ""
 custom_version = fetch_env_var(node, "EY_MYSQL_VERSION", nil)
